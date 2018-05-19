@@ -7,7 +7,7 @@ import mu.KotlinLogging
 private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
-//    fetchToken()
+    fetchToken()
     val port = System.getenv("PORT")?.toInt() ?: 3000
     logger.info { "PORT is $port" }
     val app = Javalin.start(port)
