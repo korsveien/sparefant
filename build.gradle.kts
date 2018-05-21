@@ -23,6 +23,7 @@ dependencies {
     compile(kotlin("stdlib"))
     compile("io.javalin:javalin:1.6.1")
     compile("com.github.kittinunf.fuel:fuel:1.13.0")
+    compile("com.github.kittinunf.fuel:fuel-moshi:1.13.0")
     compile ("io.github.microutils:kotlin-logging:1.5.4")
     compile ("ch.qos.logback:logback-classic:1.3.0-alpha4")
 }
