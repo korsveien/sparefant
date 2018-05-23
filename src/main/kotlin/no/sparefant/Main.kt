@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
             .map { fetchAccountInfo(it) }
             .fold(
                     { succ -> println(succ.get()) },
-                    { err -> logger.warn { err.exception }}
+                    { err -> logger.error { "Could not retrieve account info: ${err.exception}" }}
             )
 
     val port = System.getenv("PORT")?.toInt() ?: 3000
