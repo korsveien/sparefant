@@ -16,22 +16,20 @@ private val logger = KotlinLogging.logger {}
 val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
 
 fun main(args: Array<String>) {
-
-    val accountInfo = fetchToken()
+    val available = fetchToken()
             .flatMap { fetchAccountId(it) }
             .map { fetchAccountInfo(it) }
             .fold(
-                    { it.get() },
+                    { it.get().item.available },
                     { err ->
                         logger.error { "Could not retrieve account info: ${err.exception}" }
                         System.exit(1)
                     }
             )
 
-    logger.debug { "accountInfo $accountInfo" }
     val port = System.getenv("PORT")?.toInt() ?: 3000
     val app = Javalin.start(port)
-    app.get("/") { it.result("Hello") }
+    app.get("/") { it.result(available.toString()) }
 }
 
 private fun fetchToken(): Result<Token, FuelError> {
@@ -68,7 +66,7 @@ private fun fetchAccountId(token: Token): Result<Pair<Token, Accounts>, FuelErro
 
 }
 
-private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<String, FuelError> {
+private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<AccountInfo, FuelError> {
     val token = credentials.first
     val accountId = credentials.second.items.first().accountId
     val (_, _, result) = "https://api.sbanken.no/bank/api/v1/accounts/${accountId}"
@@ -77,7 +75,7 @@ private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<String,
             .header("Authorization" to "${token.tokenType} ${token.accessToken}")
             .header("customerId" to customerId)
             .also { logger.debug { it } }
-            .responseString()
+            .responseObject<AccountInfo>()
             .also { logger.debug { it } }
 
     return result
