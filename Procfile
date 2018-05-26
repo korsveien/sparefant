@@ -1,1 +1,1 @@
-web: java -jar build/libs/sparefant-auth-all.jar
+web: java -jar build/libs/sparefant-all.jar
