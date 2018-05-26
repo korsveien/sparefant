@@ -8,30 +8,40 @@ import com.github.kittinunf.result.Result
 import com.github.kittinunf.result.map
 import io.javalin.Javalin
 import mu.KotlinLogging
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
 
-    fetchToken()
+    val accountInfo = fetchToken()
             .map { fetchAccountInfo(it) }
             .fold(
-                    { succ -> println(succ.get()) },
-                    { err -> logger.error { "Could not retrieve account info: ${err.exception}" }}
+                    { it.get() },
+                    { err ->
+                        logger.error { "Could not retrieve account info: ${err.exception}" }
+                        System.exit(1)
+                    }
             )
 
     val port = System.getenv("PORT")?.toInt() ?: 3000
     val app = Javalin.start(port)
+
     app.get("/") { it.result("Hello") }
 }
 
 private fun fetchToken(): Result<Token, FuelError> {
-    val clientID = System.getenv("SBANKEN_CLIENT_ID")
-    val secret = System.getenv("SBANKEN_SECRET")
+    val clientID = System.getenv("SBANKEN_CLIENT_ID").let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
+    val secret = System.getenv("SBANKEN_SECRET").let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
+
+    logger.debug { "clientID: $clientID" }
+    logger.debug { "secret: $secret" }
 
     val (_, _, result) = "https://api.sbanken.no/identityserver/connect/token"
             .httpPost()
             .header("Content-Type" to "application/x-www-form-urlencoded")
+            .header("Accept" to "application/json")
             .authenticate(clientID, secret)
             .body("grant_type=client_credentials", Charsets.UTF_8)
             .also { logger.debug { it } }
@@ -41,14 +51,15 @@ private fun fetchToken(): Result<Token, FuelError> {
     return result
 }
 
-private fun fetchAccountInfo(token: Token): Result<AccountInfo, FuelError> {
-    val accountId = System.getenv("SBANKEN_ACCOUNT_ID")
-    val (_, _, result) = "https://api.sbanken.no/bank/api/v1/accounts/$accountId"
+private fun fetchAccountInfo(token: Token): Result<String, FuelError> {
+    val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
+    val (_, _, result) = "https://api.sbanken.no/bank/api/v1/accounts/$customerId"
             .httpGet()
             .header("Accept" to "application/json")
             .header("Authorization" to "${token.tokenType} ${token.accessToken}")
+            .header("customerId" to customerId)
             .also { logger.debug { it } }
-            .responseObject<AccountInfo>()
+            .responseString()
             .also { logger.debug { it } }
 
     return result
