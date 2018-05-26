@@ -28,5 +28,3 @@ dependencies {
     compile ("io.github.microutils:kotlin-logging:1.5.4")
     compile ("ch.qos.logback:logback-classic:1.3.0-alpha4")
 }
-
-

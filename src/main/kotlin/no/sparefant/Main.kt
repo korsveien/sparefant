@@ -15,8 +15,6 @@ import java.nio.charset.StandardCharsets
 private val logger = KotlinLogging.logger {}
 val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
 
-typealias AccountId = String
-
 fun main(args: Array<String>) {
 
     val accountInfo = fetchToken()
