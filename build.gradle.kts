@@ -21,6 +21,7 @@ application {
 
 dependencies {
     compile(kotlin("stdlib"))
+    compile(kotlin("reflect"))
     compile("io.javalin:javalin:1.6.1")
     compile("com.github.kittinunf.fuel:fuel:1.13.0")
     compile("com.github.kittinunf.fuel:fuel-moshi:1.13.0")
