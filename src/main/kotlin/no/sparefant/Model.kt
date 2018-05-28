@@ -2,6 +2,8 @@ package no.sparefant
 
 import com.squareup.moshi.Json
 
+data class SparefantResponse(val available: Double)
+
 data class Token(
         @Json(name = "access_token") val accessToken: String,
         @Json(name="expires_in") val expiresIn: Int,

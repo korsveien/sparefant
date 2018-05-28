@@ -7,6 +7,8 @@ import com.github.kittinunf.fuel.moshi.responseObject
 import com.github.kittinunf.result.Result
 import com.github.kittinunf.result.flatMap
 import com.github.kittinunf.result.map
+import com.squareup.moshi.KotlinJsonAdapterFactory
+import com.squareup.moshi.Moshi
 import io.javalin.Javalin
 import mu.KotlinLogging
 import java.net.URLEncoder
@@ -27,9 +29,15 @@ fun main(args: Array<String>) {
                     }
             )
 
-    val port = System.getenv("PORT")?.toInt() ?: 3000
-    val app = Javalin.start(port)
-    app.get("/") { it.result(available.toString()) }
+    if (available is Double) {
+        val response = SparefantResponse(available)
+        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        val json = moshi.adapter(SparefantResponse::class.java).toJson(response)
+
+        val port = System.getenv("PORT")?.toInt() ?: 3000
+        val app = Javalin.start(port)
+        app.get("/") { it.result(json) }
+    }
 }
 
 private fun fetchToken(): Result<Token, FuelError> {
