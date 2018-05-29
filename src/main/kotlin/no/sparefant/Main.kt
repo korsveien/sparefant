@@ -7,6 +7,7 @@ import com.github.kittinunf.fuel.moshi.responseObject
 import com.github.kittinunf.result.Result
 import com.github.kittinunf.result.flatMap
 import com.github.kittinunf.result.map
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.KotlinJsonAdapterFactory
 import com.squareup.moshi.Moshi
 import io.javalin.Javalin
@@ -15,29 +16,32 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger {}
-val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
+val customerId = System.getenv("SBANKEN_ACCOUNT_ID")!!
+val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+val adapter = moshi.adapter(SparefantResponse::class.java)
+val port = System.getenv("PORT")?.toInt() ?: 3000
 
 fun main(args: Array<String>) {
-    val available = fetchToken()
+    val app = Javalin.start(port)
+
+    fetchToken()
             .flatMap { fetchAccountId(it) }
             .map { fetchAccountInfo(it) }
             .fold(
-                    { it.get().item.available },
+                    {
+                        handleGet(it, app, adapter)
+                    },
                     { err ->
                         logger.error { "Could not retrieve account info: ${err.exception}" }
                         System.exit(1)
                     }
             )
+}
 
-    if (available is Double) {
-        val response = SparefantResponse(available)
-        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-        val json = moshi.adapter(SparefantResponse::class.java).toJson(response)
-
-        val port = System.getenv("PORT")?.toInt() ?: 3000
-        val app = Javalin.start(port)
-        app.get("/") { it.result(json) }
-    }
+private fun handleGet(it: Result<AccountInfo, FuelError>, app: Javalin, adapter: JsonAdapter<SparefantResponse>) {
+    val available = it.get().item.available
+    val response = SparefantResponse(available)
+    app.get("/") { it.result(adapter.toJson(response)) }
 }
 
 private fun fetchToken(): Result<Token, FuelError> {
@@ -77,7 +81,7 @@ private fun fetchAccountId(token: Token): Result<Pair<Token, Accounts>, FuelErro
 private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<AccountInfo, FuelError> {
     val token = credentials.first
     val accountId = credentials.second.items.first().accountId
-    val (_, _, result) = "https://api.sbanken.no/bank/api/v1/accounts/${accountId}"
+    val (_, _, result) = "https://api.sbanken.no/bank/api/v1/accounts/$accountId"
             .httpGet()
             .header("Accept" to "application/json")
             .header("Authorization" to "${token.tokenType} ${token.accessToken}")
