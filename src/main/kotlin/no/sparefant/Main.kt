@@ -1,6 +1,7 @@
 package no.sparefant
 
 import com.github.kittinunf.fuel.core.FuelError
+import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.moshi.responseObject
@@ -23,6 +24,9 @@ val port = System.getenv("PORT")?.toInt() ?: 3000
 
 fun main(args: Array<String>) {
     val app = Javalin.start(port)
+
+    FuelManager.instance.timeoutInMillisecond = 5000
+    FuelManager.instance.timeoutReadInMillisecond = 2000
 
     fetchToken()
             .flatMap { fetchAccountId(it) }
@@ -57,9 +61,7 @@ private fun fetchToken(): Result<Token, FuelError> {
             .header("Accept" to "application/json")
             .authenticate(clientId, secret)
             .body("grant_type=client_credentials", Charsets.UTF_8)
-            .also { logger.debug { it } }
             .responseObject<Token>()
-            .also { logger.debug { it } }
 
     return result
 }
@@ -70,12 +72,9 @@ private fun fetchAccountId(token: Token): Result<Pair<Token, Accounts>, FuelErro
             .header("Authorization" to "${token.tokenType} ${token.accessToken}")
             .header("customerId" to customerId)
             .header("Accept" to "application/json")
-            .also { logger.debug { it } }
             .responseObject<Accounts>()
-            .also { logger.debug { it } }
 
     return result.map { Pair(token, it) }
-
 }
 
 private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<AccountInfo, FuelError> {
