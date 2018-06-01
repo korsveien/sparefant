@@ -27,6 +27,8 @@ fun main(args: Array<String>) {
 
     FuelManager.instance.timeoutInMillisecond = 5000
     FuelManager.instance.timeoutReadInMillisecond = 2000
+    FuelManager.instance.addRequestInterceptor { { it.also { logger.debug { it } } } }
+    FuelManager.instance.addResponseInterceptor { { _, res -> res.also { logger.debug { res } } } }
 
     fetchToken()
             .flatMap { fetchAccountId(it) }
@@ -85,9 +87,7 @@ private fun fetchAccountInfo(credentials: Pair<Token, Accounts>): Result<Account
             .header("Accept" to "application/json")
             .header("Authorization" to "${token.tokenType} ${token.accessToken}")
             .header("customerId" to customerId)
-            .also { logger.debug { it } }
             .responseObject<AccountInfo>()
-            .also { logger.debug { it } }
 
     return result
 }
