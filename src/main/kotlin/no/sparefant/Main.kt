@@ -17,7 +17,9 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 private val logger = KotlinLogging.logger {}
-val customerId = System.getenv("SBANKEN_ACCOUNT_ID")!!
+val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
+        ?: throw IllegalStateException("Cannot find SBANKEN_ACCOUNT_ID environment value")
+
 val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 val adapter = moshi.adapter(SparefantResponse::class.java)
 val port = System.getenv("PORT")?.toInt() ?: 3000
@@ -51,8 +53,12 @@ private fun handleGet(it: Result<AccountInfo, FuelError>, app: Javalin, adapter:
 }
 
 private fun fetchToken(): Result<Token, FuelError> {
+
     val clientId = System.getenv("SBANKEN_CLIENT_ID").let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
+            ?: throw IllegalStateException("Cannot find SBANKEN_CLIENT_ID environment value")
+
     val secret = System.getenv("SBANKEN_SECRET").let { URLEncoder.encode(it, StandardCharsets.UTF_8) }
+            ?: throw IllegalStateException("Cannot find SBANKEN_SECRET environment value")
 
     logger.debug { "clientId: $clientId" }
     logger.debug { "secret: $secret" }
