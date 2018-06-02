@@ -20,8 +20,8 @@ private val logger = KotlinLogging.logger {}
 val customerId = System.getenv("SBANKEN_ACCOUNT_ID")
         ?: throw IllegalStateException("Cannot find SBANKEN_ACCOUNT_ID environment value")
 
-val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-val adapter = moshi.adapter(SparefantResponse::class.java)
+val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()!!
+val adapter = moshi.adapter(SparefantResponse::class.java)!!
 val port = System.getenv("PORT")?.toInt() ?: 3000
 
 fun main(args: Array<String>) {
